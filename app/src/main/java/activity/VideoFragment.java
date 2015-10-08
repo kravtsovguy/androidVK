@@ -55,6 +55,23 @@ public class VideoFragment extends Fragment {
         video.requestFocus();
         video.start();
 
+        /*final MediaController mMediaController = new MediaController(getActivity(), false);
+
+        video.setOnPreparedListener( new MediaPlayer.OnPreparedListener() {
+
+            @Override
+            public void onPrepared(MediaPlayer pMp) {
+                mMediaController.show();
+            }
+
+        });
+
+        video.setMediaController(mMediaController);
+        mMediaController.setMediaPlayer(video);
+        video.setVideoPath(videoSource);  // may not be applicable in your case
+        video.requestFocus();
+        video.start();*/
+
         // Inflate the layout for this fragment
         return rootView;
     }

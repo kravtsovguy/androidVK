@@ -1,15 +1,10 @@
 package activity;
 
 import android.app.Activity;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -20,8 +15,6 @@ import android.widget.ListView;
 import android.widget.MediaController;
 
 import com.baseteam.test4.MusicController;
-import com.baseteam.test4.MusicService;
-import com.baseteam.test4.MusicService.MusicBinder;
 import com.baseteam.test4.R;
 import com.baseteam.test4.VKAdapterAudio;
 import com.baseteam.test4.VKaudio;
@@ -35,7 +28,9 @@ import com.vk.sdk.api.VKResponse;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class MusicFragment extends Fragment implements MediaController.MediaPlayerControl {
+public class MusicFragment extends Fragment implements MediaController.MediaPlayerControl,
+        MediaPlayer.OnPreparedListener, MediaPlayer.OnErrorListener,
+        MediaPlayer.OnCompletionListener, MediaPlayer.OnInfoListener, MediaPlayer.OnBufferingUpdateListener {
 
     public MusicFragment() {
         // Required empty public constructor
@@ -45,50 +40,22 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
-
         setController();
 
-
-
+        initMusicPlayer();
     }
 
     @Override
     public void onStart() {
         super.onStart();
 
-        //musicSrv = new MusicService();
 
-        if(playIntent==null) {
-            playIntent = new Intent(MainActivity.shared, MusicService.class);
-            MainActivity.shared.bindService(playIntent, musicConnection, Context.BIND_AUTO_CREATE);
-            MainActivity.shared.startService(playIntent);
-        }
     }
 
-    private MusicService musicSrv;
-    private Intent playIntent;
-    private boolean musicBound=false;
-    private boolean paused=false, playbackPaused=false;
 
 
-    private ServiceConnection musicConnection = new ServiceConnection(){
 
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            MusicBinder binder = (MusicBinder)service;
-            //get service
-            musicSrv = binder.getService();
-            //pass list
-            //musicSrv.setList(music);
-            musicBound = true;
-        }
 
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
-            musicBound = false;
-        }
-    };
 
     private static MusicController controller;
     private void setController(){
@@ -110,33 +77,30 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
         controller.setEnabled(true);
     }
 
-    public static VKaudio[] music;
+
+    private boolean paused=false, playbackPaused=false;
+
     public static View rootView;
+
+    public static VKaudio[] music;
+    VKaudio current;
+    Integer cur=-1;
     ListView list;
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        rootView = inflater.inflate(R.layout.fragment_music, container, false);
-
-
-
-
-        list = (ListView)rootView.findViewById(R.id.listView);
+    void initList()
+    {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
                 try {
-                    //VKaudio audio = music[position];
-                    //PlayAudio(position);
-                    musicSrv.setSong(position);
-                    musicSrv.playSong();
-                    if(playbackPaused){
+                    if(position == cur) return;
+                    cur = position;
+                    PlayAudio();
+                    /*if(playbackPaused){
                         setController();
                         playbackPaused=false;
-                    }
-                    controller.show(0);
+                    }*/
+                    //if(!controller.isShown()) controller.show(0);
 
                     /*Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(audio.url));
                     startActivity(browserIntent);*/
@@ -147,13 +111,7 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
             }
         });
         controller.setAnchorView(list);
-
-
-        CheckMusic();
         SetList(music);
-
-
-        return rootView;
     }
     void  SetList(VKaudio[] mas)
     {
@@ -163,37 +121,65 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
         list.setAdapter(ad);
     }
 
+
+
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        rootView = inflater.inflate(R.layout.fragment_music, container, false);
+
+
+        list = (ListView)rootView.findViewById(R.id.listView);
+        initList();
+
+        CheckMusic();
+
+
+        return rootView;
+    }
+
+
+
+
+    public static MediaPlayer player = new MediaPlayer();
+    public void initMusicPlayer(){
+        //set player properties
+        player.setWakeMode(getContext(),
+                PowerManager.PARTIAL_WAKE_LOCK);
+        player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+        player.setOnPreparedListener(this);
+        player.setOnCompletionListener(this);
+        player.setOnErrorListener(this);
+        player.setOnInfoListener(this);
+        player.setOnBufferingUpdateListener(this);
+    }
+
+    void PlayAudio()
+    {
+        Log.w("123", "play audio");
+        player.reset();
+
+        try {
+            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
+            player.setDataSource(music[cur].url);
+            player.prepareAsync();
+        }catch (Exception e){
+            Log.e("123","error - play audio");
+
+        }
+    }
+
+
     void CheckMusic()
     {
         if(music != null) return;
         GetMusic();
     }
-
-    /*public static MediaPlayer player = new MediaPlayer();
-    void PlayAudio(int i)
-    {
-        try {
-
-            player.stop();
-            player = new MediaPlayer();
-            player.setAudioStreamType(AudioManager.STREAM_MUSIC);
-            player.setDataSource(music[i].url);
-            //player.prepare();
-            //player.start();
-            player.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
-                @Override
-                public void onPrepared(MediaPlayer mp) {
-                    player.start();
-                }
-            });
-            player.prepareAsync();
-        }catch (Exception e){}
-    }*/
-
-
     public void GetMusic()
     {
-        VKRequest r = VKApi.audio().get(VKParameters.from(VKApiConst.OWNER_ID, VKSdk.getAccessToken().userId, "need_user", 0, "count", 10));
+        VKRequest r = VKApi.audio().get(VKParameters.from(VKApiConst.OWNER_ID, VKSdk.getAccessToken().userId, "need_user", 0, "count", 100));
         r.executeWithListener(new VKRequest.VKRequestListener() {
             @Override
             public void onComplete(VKResponse response) {
@@ -213,7 +199,6 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
 
                     }
                     music = aud;
-                    musicSrv.setList(music);
                     SetList(music);
                 } catch (Exception e) {
                     Log.i("1234", e.toString());
@@ -223,21 +208,17 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
     }
 
     private void playNext(){
-        musicSrv.playNext();
-        if(playbackPaused){
-            setController();
-            playbackPaused=false;
-        }
-        controller.show(0);
+
+        cur++;
+        if(cur >music.length) cur =0;
+        PlayAudio();
+        //controller.show(0);
     }
 
     private void playPrev(){
-        musicSrv.playPrev();
-        if(playbackPaused){
-            setController();
-            playbackPaused=false;
-        }
-        controller.show(0);
+        cur--;
+        if(cur<0) cur =music.length-1;
+        PlayAudio();
     }
 
     @Override
@@ -274,38 +255,32 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
     @Override
     public void pause() {
         playbackPaused=true;
-        musicSrv.pausePlayer();
+        player.pause();
     }
 
     @Override
     public void seekTo(int pos) {
-        musicSrv.seek(pos);
+        player.seekTo(pos);
     }
 
     @Override
     public void start() {
-        musicSrv.go();
+        player.start();
     }
 
     @Override
     public int getDuration() {
-        if(musicSrv!=null &&  musicBound && musicSrv.isPng())
-            return musicSrv.getDur();
-        else return 0;
+        return player.getDuration();
     }
 
     @Override
     public int getCurrentPosition() {
-        if(musicSrv!=null && musicBound && musicSrv.isPng())
-        return musicSrv.getPosn();
-        else return 0;
+        return player.getCurrentPosition();
     }
 
     @Override
     public boolean isPlaying() {
-        if(musicSrv!=null && musicBound)
-        return musicSrv.isPng();
-        return false;
+        return player.isPlaying();
     }
 
     @Override
@@ -334,4 +309,42 @@ public class MusicFragment extends Fragment implements MediaController.MediaPlay
     }
 
 
+
+    @Override
+    public void onCompletion(MediaPlayer mp) {
+        Log.i("onCompletion", String.valueOf(player.getCurrentPosition()));
+
+        if(player.getCurrentPosition()>0)
+        {
+            mp.reset();
+            playNext();
+        }
+    }
+
+    @Override
+    public boolean onError(MediaPlayer mp, int what, int extra) {
+        mp.reset();
+        return false;
+    }
+
+    public void onPrepared(MediaPlayer mp) {
+        //mp.start();
+    }
+
+
+    @Override
+    public boolean onInfo(MediaPlayer mp, int what, int extra) {
+        //mp.seekTo(0);
+        return true;
+    }
+
+    @Override
+    public void onBufferingUpdate(MediaPlayer mp, int percent) {
+        Log.i("buf", String.valueOf(percent));
+        if(mp.isPlaying()) return;
+        if(percent<=1) return;
+        mp.start();
+        if(!controller.isShown()) controller.show();
+
+    }
 }
