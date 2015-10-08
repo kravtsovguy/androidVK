@@ -39,7 +39,8 @@ public class VideoFragment extends Fragment {
         // установите свой путь к файлу на SD-карточке
 
         //String videoSource ="/sdcard/Video/ana.mpeg";
-        String videoSource ="https://cs542300.vk.me/2/u3400922/videos/d65c5d132b.720.mp4";
+        //String videoSource ="https://cs542300.vk.me/2/u3400922/videos/d65c5d132b.720.mp4";
+        String videoSource = "http://cs540502v4.vk.me/u82858868/videos/0aca1f977d.360.mp4?extra=1pIvbmxIm5El_bz8qxozTvET5GOipetrjXrc-IzVbRO5P2mdimhmKG7EoVjiiRlS_ajloEzCU-RQhxFTMh7lHFtyqdibx-oG8g";
         //http://www.androidbegin.com/tutorial/AndroidCommercial.3gp
 
 
