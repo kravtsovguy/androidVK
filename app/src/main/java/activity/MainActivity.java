@@ -1,10 +1,6 @@
 package activity;
 
-import android.app.Activity;
-import android.app.Application;
-import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -12,29 +8,17 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.baseteam.test4.MusicService;
 import com.baseteam.test4.R;
-import com.baseteam.test4.VKaudio;
-import com.gc.materialdesign.views.ButtonRectangle;
 import com.gc.materialdesign.widgets.Dialog;
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKCallback;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
-import com.vk.sdk.api.VKApi;
-import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKError;
-import com.vk.sdk.api.VKParameters;
-import com.vk.sdk.api.VKRequest;
-import com.vk.sdk.api.VKResponse;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 public class MainActivity extends AppCompatActivity implements FragmentDrawer.FragmentDrawerListener {
 
@@ -135,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements FragmentDrawer.Fr
         if (!VKSdk.onActivityResult(requestCode, resultCode, data, new VKCallback<VKAccessToken>() {
             @Override
             public void onResult(VKAccessToken res) {
-                HomeFragment.CheckLogin();
+                HomeFragment.checkLogin();
 // Пользователь успешно авторизовался
             }
             @Override
@@ -183,11 +167,12 @@ public class MainActivity extends AppCompatActivity implements FragmentDrawer.Fr
     {
         String[] sc = new String[]{VKScope.FRIENDS, VKScope.WALL, VKScope.PHOTOS, VKScope.NOHTTPS, VKScope.MESSAGES, VKScope.AUDIO, VKScope.VIDEO};
         if(!VKSdk.isLoggedIn()) VKSdk.login(this, sc);
+
     }
     void LogoutVK()
     {
         VKSdk.logout();
-        HomeFragment.CheckLogin();
+        HomeFragment.checkLogin();
     }
 
 

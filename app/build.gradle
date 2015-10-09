@@ -35,4 +35,6 @@ dependencies {
 
     compile 'com.vk:androidsdk:+'
 
+    compile 'com.squareup.picasso:picasso:2.5.2'
+    
 }
